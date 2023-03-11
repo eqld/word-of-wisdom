@@ -22,7 +22,13 @@ The program works as follows:
 
 ### Usage
 
-To build and run the server, execute the following command in the root of the project:
+To build and run the server with default configuration, execute the following command in the root of the project:
+
+```sh
+make build-and-run-server
+```
+
+You may tune some parameters if needed:
 
 ```sh
 make build-and-run-server WOW_SERVER_DIFFICULTY=2 WOW_SERVER_CHALLENGE_LENGTH=16 WOW_SERVER_SOLUTION_LENGTH=8
@@ -45,7 +51,13 @@ The program works as follows:
 
 ### Usage
 
-To build and run the client, execute the following command in the root of the project:
+To build and run the client with default configuration, execute the following command in the root of the project:
+
+```sh
+make build-and-run-client
+```
+
+You may tune some parameters if needed:
 
 ```sh
 make build-and-run-client WOW_CLIENT_SOLUTION_LENGTH=8
