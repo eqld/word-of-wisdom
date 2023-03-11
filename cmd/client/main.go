@@ -71,5 +71,7 @@ func main() {
 		os.Exit(exitCodeFailedToReadFromConn)
 	}
 
-	fmt.Println(quote)
+	fmt.Println()
+	fmt.Println("WOW QUOTE >>>", quote)
+	fmt.Println()
 }
