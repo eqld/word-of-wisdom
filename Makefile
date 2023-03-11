@@ -11,6 +11,7 @@ CLIENT_PORT ?= 8080
 WOW_SERVER_DIFFICULTY ?= 2
 WOW_SERVER_CHALLENGE_LENGTH ?= 16
 WOW_SERVER_SOLUTION_LENGTH ?= 8
+WOW_CLIENT_SOLUTION_LENGTH ?= $(WOW_SERVER_SOLUTION_LENGTH)
 
 create-network:
 	-docker network create $(NETWORK_NAME)
@@ -32,6 +33,7 @@ run-server: create-network
 
 run-client: create-network
 	docker run -it --rm --name $(CLIENT_CONTAINER_NAME) \
+		--env WOW_CLIENT_SOLUTION_LENGTH=$(WOW_CLIENT_SOLUTION_LENGTH) \
 		--network $(NETWORK_NAME) \
 		$(CLIENT_IMAGE_NAME) "$(CLIENT_HOST):$(CLIENT_PORT)"
 

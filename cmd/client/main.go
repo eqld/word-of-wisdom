@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/eqld/word-of-wisdom/internal/env"
 	"github.com/eqld/word-of-wisdom/internal/pow"
 	"github.com/eqld/word-of-wisdom/internal/protocol"
 )
@@ -21,10 +22,13 @@ const (
 )
 
 const (
-	solutionLength = 8
+	defaultSolutionLength = 8
 )
 
 func main() {
+
+	solutionLength := env.MustReadIntEnv("WOW_CLIENT_SOLUTION_LENGTH", defaultSolutionLength, exitCodeWrongUsage)
+
 	if len(os.Args) < 2 {
 		log.Println("usage: word-of-wisdom-client <host:port>")
 		os.Exit(exitCodeWrongUsage)

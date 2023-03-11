@@ -38,7 +38,15 @@ The program works as follows:
 
 ### Usage
 
-TODO
+To build and run the client, execute the following command in the root of the project:
+
+```sh
+make build-and-run-client WOW_CLIENT_SOLUTION_LENGTH=10
+```
+
+Set custom values of environment variables if needed.
+
+See `Makefile` for other available targets and additional details.
 
 ## PoW algorithm selection explanation
 
