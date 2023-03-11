@@ -14,24 +14,37 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/eqld/word-of-wisdom/internal/env"
 	"github.com/eqld/word-of-wisdom/internal/pow"
 	"github.com/eqld/word-of-wisdom/internal/protocol"
 )
 
 const (
-	difficulty      = 2
-	challengeLength = 16
-	solutionLength  = 8
+	exitCodeWrongParam = iota + 1
+	exitCodeFailedToListen
+)
+
+const (
+	defaultDifficulty      = 2
+	defaultChallengeLength = 16
+	defaultSolutionLength  = 8
 )
 
 func main() {
+
+	difficulty := env.MustReadIntEnv("WOW_SERVER_DIFFICULTY", defaultDifficulty, exitCodeWrongParam)
+	challengeLength := env.MustReadIntEnv("WOW_SERVER_CHALLENGE_LENGTH", defaultChallengeLength, exitCodeWrongParam)
+	solutionLength := env.MustReadIntEnv("WOW_SERVER_SOLUTION_LENGTH", defaultSolutionLength, exitCodeWrongParam)
+
+	log.Printf("starting the server with difficulty '%v', challenge length '%v' and solution length '%v'",
+		difficulty, challengeLength, solutionLength)
 
 	// Set up TCP listener.
 
 	listener, err := net.Listen("tcp", ":8080")
 	if err != nil {
 		log.Println("failed to create tcp listener:", err)
-		os.Exit(1)
+		os.Exit(exitCodeFailedToListen)
 	}
 	defer listener.Close()
 
@@ -57,6 +70,12 @@ func main() {
 
 	// Handle incoming connections.
 
+	h := handler{
+		difficulty:      difficulty,
+		challengeLength: challengeLength,
+		solutionLength:  solutionLength,
+	}
+
 	go func() {
 		for connNum := 0; ctx.Err() == nil; connNum++ {
 
@@ -71,7 +90,7 @@ func main() {
 				continue
 			}
 
-			go handleConnection(ctx, connNum, conn)
+			go h.handleConnection(ctx, connNum, conn)
 		}
 	}()
 
@@ -79,9 +98,15 @@ func main() {
 	<-ctx.Done()
 }
 
+type handler struct {
+	difficulty      int
+	challengeLength int
+	solutionLength  int
+}
+
 // handleConnection handles given client connection.
 // In case of any error it logs error message and closes the connection.
-func handleConnection(ctx context.Context, connNum int, conn net.Conn) {
+func (h handler) handleConnection(ctx context.Context, connNum int, conn net.Conn) {
 	const connHandleTimeout = 15 * time.Second
 
 	defer conn.Close()
@@ -89,17 +114,17 @@ func handleConnection(ctx context.Context, connNum int, conn net.Conn) {
 	ctx, cancel := context.WithTimeout(ctx, connHandleTimeout)
 	defer cancel()
 
-	challenge, err := pow.GenerateRandomString(challengeLength)
+	challenge, err := pow.GenerateRandomString(h.challengeLength)
 	if err != nil {
 		logf(connNum, "failed to generate callenge: %v", err)
 		return
 	}
 
-	logf(connNum, "generated challenge '%v', difficulty is '%v'", challenge, difficulty)
+	logf(connNum, "generated challenge '%v', difficulty is '%v'", challenge, h.difficulty)
 
 	// Send challenge with difficulty to client.
 
-	message := protocol.FormatChallengeForClient(challenge, difficulty)
+	message := protocol.FormatChallengeForClient(challenge, h.difficulty)
 	if _, err = fmt.Fprintln(conn, message); err != nil {
 		logf(connNum, "failed to send challenge: %v", err)
 		return
@@ -109,19 +134,19 @@ func handleConnection(ctx context.Context, connNum int, conn net.Conn) {
 
 	// Read solution from client.
 
-	solutionBytes := make([]byte, solutionLength+1)
+	solutionBytes := make([]byte, h.solutionLength+1)
 	if _, err := conn.Read(solutionBytes); err != nil {
 		logf(connNum, "failed to read solution: %v", err)
 		return
 	}
-	if solutionBytes[solutionLength] != '\n' {
-		logf(connNum, "solution length exceeds limit '%v'", solutionLength)
+	if solutionBytes[h.solutionLength] != '\n' {
+		logf(connNum, "solution length exceeds limit '%v'", h.solutionLength)
 		return
 	}
-	solution := string(solutionBytes[:solutionLength])
+	solution := string(solutionBytes[:h.solutionLength])
 	logf(connNum, "received solution '%v'", solution)
 
-	if pow.VerifySolution(challenge, difficulty, solution) {
+	if pow.VerifySolution(challenge, h.difficulty, solution) {
 		// Send random quote to the client if solution is correct.
 
 		logf(connNum, "solution is correct, generating a quote")

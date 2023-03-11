@@ -15,7 +15,15 @@ The program works as follows:
 
 ### Usage
 
-TODO
+To build and run the server, execute the following command in the root of the project:
+
+```sh
+make build-and-run-server WOW_SERVER_DIFFICULTY=2 WOW_SERVER_CHALLENGE_LENGTH=16 WOW_SERVER_SOLUTION_LENGTH=8
+```
+
+Set custom values of environment variables if needed.
+
+See `Makefile` for other available targets and additional details.
 
 ## Client
 

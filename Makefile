@@ -8,6 +8,9 @@ NETWORK_NAME = wow-network
 SERVER_PORT = 8080
 CLIENT_HOST ?= $(SERVER_CONTAINER_NAME)
 CLIENT_PORT ?= 8080
+WOW_SERVER_DIFFICULTY ?= 2
+WOW_SERVER_CHALLENGE_LENGTH ?= 16
+WOW_SERVER_SOLUTION_LENGTH ?= 8
 
 create-network:
 	-docker network create $(NETWORK_NAME)
@@ -19,10 +22,18 @@ build-client:
 	docker build -t $(CLIENT_IMAGE_NAME) -f client.Dockerfile .
 
 run-server: create-network
-	docker run -it --rm --name $(SERVER_CONTAINER_NAME) --network $(NETWORK_NAME) -p $(SERVER_PORT):$(SERVER_PORT) $(SERVER_IMAGE_NAME)
+	docker run -it --rm --name $(SERVER_CONTAINER_NAME) \
+		--env WOW_SERVER_DIFFICULTY=$(WOW_SERVER_DIFFICULTY) \
+		--env WOW_SERVER_CHALLENGE_LENGTH=$(WOW_SERVER_CHALLENGE_LENGTH) \
+		--env WOW_SERVER_SOLUTION_LENGTH=$(WOW_SERVER_SOLUTION_LENGTH) \
+		--network $(NETWORK_NAME) \
+		-p $(SERVER_PORT):$(SERVER_PORT) \
+		$(SERVER_IMAGE_NAME)
 
 run-client: create-network
-	docker run -it --rm --name $(CLIENT_CONTAINER_NAME) --network $(NETWORK_NAME) $(CLIENT_IMAGE_NAME) "$(CLIENT_HOST):$(CLIENT_PORT)"
+	docker run -it --rm --name $(CLIENT_CONTAINER_NAME) \
+		--network $(NETWORK_NAME) \
+		$(CLIENT_IMAGE_NAME) "$(CLIENT_HOST):$(CLIENT_PORT)"
 
 build-and-run-server: build-server run-server
 
