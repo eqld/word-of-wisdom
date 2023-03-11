@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"errors"
@@ -22,6 +21,7 @@ import (
 const (
 	difficulty      = 2
 	challengeLength = 16
+	solutionLength  = 8
 )
 
 func main() {
@@ -109,12 +109,16 @@ func handleConnection(ctx context.Context, connNum int, conn net.Conn) {
 
 	// Read solution from client.
 
-	solution, err := bufio.NewReader(conn).ReadString('\n')
-	if err != nil {
+	solutionBytes := make([]byte, solutionLength+1)
+	if _, err := conn.Read(solutionBytes); err != nil {
 		logf(connNum, "failed to read solution: %v", err)
 		return
 	}
-	solution = strings.TrimRight(solution, "\n")
+	if solutionBytes[solutionLength] != '\n' {
+		logf(connNum, "solution length exceeds limit '%v'", solutionLength)
+		return
+	}
+	solution := string(solutionBytes[:solutionLength])
 	logf(connNum, "received solution '%v'", solution)
 
 	if pow.VerifySolution(challenge, difficulty, solution) {
