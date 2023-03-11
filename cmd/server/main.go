@@ -25,9 +25,10 @@ const (
 )
 
 const (
-	defaultDifficulty      = 2
-	defaultChallengeLength = 16
-	defaultSolutionLength  = 8
+	defaultDifficulty               = 2
+	defaultChallengeLength          = 16
+	defaultSolutionLength           = 8
+	defaultConnHandleTimeoutSeconds = 15
 )
 
 func main() {
@@ -35,6 +36,7 @@ func main() {
 	difficulty := env.MustReadIntEnv("WOW_SERVER_DIFFICULTY", defaultDifficulty, exitCodeWrongParam)
 	challengeLength := env.MustReadIntEnv("WOW_SERVER_CHALLENGE_LENGTH", defaultChallengeLength, exitCodeWrongParam)
 	solutionLength := env.MustReadIntEnv("WOW_SERVER_SOLUTION_LENGTH", defaultSolutionLength, exitCodeWrongParam)
+	connHandleTimeoutSeconds := env.MustReadIntEnv("WOW_SERVER_CONN_HANDLE_TIMEOUT_SECONDS", defaultConnHandleTimeoutSeconds, exitCodeWrongParam)
 
 	log.Printf("starting the server with difficulty '%v', challenge length '%v' and solution length '%v'",
 		difficulty, challengeLength, solutionLength)
@@ -71,9 +73,10 @@ func main() {
 	// Handle incoming connections.
 
 	h := handler{
-		difficulty:      difficulty,
-		challengeLength: challengeLength,
-		solutionLength:  solutionLength,
+		difficulty:               difficulty,
+		challengeLength:          challengeLength,
+		solutionLength:           solutionLength,
+		connHandleTimeoutSeconds: connHandleTimeoutSeconds,
 	}
 
 	go func() {
@@ -99,15 +102,16 @@ func main() {
 }
 
 type handler struct {
-	difficulty      int
-	challengeLength int
-	solutionLength  int
+	difficulty               int
+	challengeLength          int
+	solutionLength           int
+	connHandleTimeoutSeconds int
 }
 
 // handleConnection handles given client connection.
 // In case of any error it logs error message and closes the connection.
 func (h handler) handleConnection(ctx context.Context, connNum int, conn net.Conn) {
-	const connHandleTimeout = 15 * time.Second
+	connHandleTimeout := time.Duration(h.connHandleTimeoutSeconds) * time.Second
 
 	defer conn.Close()
 
