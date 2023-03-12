@@ -9,7 +9,7 @@ RUN go build -o word-of-wisdom-client ./cmd/client
 
 FROM alpine:latest
 
-ENV WOW_CLIENT_SOLUTION_LENGTH=8
+ENV WOW_CLIENT_CONN_TIMEOUT_SECONDS=3
 
 WORKDIR /app
 

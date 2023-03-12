@@ -2,10 +2,12 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"log"
 	"net"
 	"os"
+	"time"
 
 	"github.com/eqld/word-of-wisdom/internal/env"
 	"github.com/eqld/word-of-wisdom/internal/pow"
@@ -22,12 +24,16 @@ const (
 )
 
 const (
-	defaultSolutionLength = 8
+	defaultConnTimeoutSeconds = 3
 )
 
 func main() {
 
-	solutionLength := env.MustReadIntEnv("WOW_CLIENT_SOLUTION_LENGTH", defaultSolutionLength, exitCodeWrongUsage)
+	connTimeoutSeconds := env.MustReadIntEnv("WOW_CLIENT_CONN_TIMEOUT_SECONDS", defaultConnTimeoutSeconds, exitCodeWrongUsage)
+
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(connTimeoutSeconds)*time.Second)
+	defer cancel()
 
 	if len(os.Args) < 2 {
 		log.Println("usage: word-of-wisdom-client <host:port>")
@@ -42,19 +48,24 @@ func main() {
 	}
 	defer conn.Close()
 
-	challengeWithDifficulty, err := bufio.NewReader(conn).ReadString('\n')
+	go func() {
+		<-ctx.Done()
+		conn.Close()
+	}()
+
+	message, err := bufio.NewReader(conn).ReadString('\n')
 	if err != nil {
 		log.Println("failed to receive challenge from server:", err)
 		os.Exit(exitCodeFailedToReadFromConn)
 	}
 
-	challenge, difficulty, err := protocol.ParseChallengeForClient(challengeWithDifficulty)
+	challenge, difficulty, solutionLength, err := protocol.ParseChallengeForClient(message)
 	if err != nil {
 		log.Println("failed to parse challenge with difficulty:", err)
 		os.Exit(exitCodeWrongMessageFormat)
 	}
 
-	solution, err := pow.SolveChallenge(challenge, difficulty, solutionLength)
+	solution, err := pow.SolveChallenge(ctx, challenge, difficulty, solutionLength)
 	if err != nil {
 		log.Println("failed to solve challenge:", err)
 		os.Exit(exitCodeFailedToSolveChallenge)

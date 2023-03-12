@@ -1,7 +1,9 @@
 package pow
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,11 +28,13 @@ func TestGenerateRandomString_Error(t *testing.T) {
 }
 
 func TestSolveAndVerify(t *testing.T) {
+	ctx := context.Background()
+
 	challenge := "test-challenge"
 	difficulty := 2
 	solutionLength := 8
 
-	solution, err := SolveChallenge(challenge, difficulty, solutionLength)
+	solution, err := SolveChallenge(ctx, challenge, difficulty, solutionLength)
 	require.NoError(t, err)
 
 	correct := VerifySolution(challenge, difficulty, solution)
@@ -42,6 +46,19 @@ func TestSolveAndVerify(t *testing.T) {
 	wrongDifficulty := 3
 	correct = VerifySolution(challenge, wrongDifficulty, solution)
 	assert.False(t, correct)
+}
+
+func TestSolveChallenge_Timeout(t *testing.T) {
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+
+	challenge := "test-challenge"
+	difficulty := 999
+	solutionLength := 1
+
+	_, err := SolveChallenge(ctx, challenge, difficulty, solutionLength)
+	require.ErrorIs(t, err, context.DeadlineExceeded)
 }
 
 func TestVerifySolution(t *testing.T) {

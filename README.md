@@ -60,7 +60,7 @@ make build-and-run-client
 You may tune some parameters if needed:
 
 ```sh
-make build-and-run-client WOW_CLIENT_SOLUTION_LENGTH=8
+make build-and-run-client WOW_CLIENT_CONN_TIMEOUT_SECONDS=2
 ```
 
 Set custom values of environment variables if needed.

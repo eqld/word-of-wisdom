@@ -1,6 +1,7 @@
 package pow
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
@@ -28,15 +29,15 @@ func GenerateRandomString(length int) (string, error) {
 }
 
 // SolveChallenge attempts to solve given challenge with given difficulty using a solution of given length.
-func SolveChallenge(challenge string, difficulty, length int) (solution string, err error) {
+func SolveChallenge(ctx context.Context, challenge string, difficulty, length int) (solution string, err error) {
 
-	for !VerifySolution(challenge, difficulty, solution) {
+	for ctx.Err() == nil && !VerifySolution(challenge, difficulty, solution) {
 		if solution, err = GenerateRandomString(length); err != nil {
 			return "", err
 		}
 	}
 
-	return solution, nil
+	return solution, ctx.Err()
 }
 
 // VerifySolution takes a PoW challenge, a difficulty level, and a solution as inputs.

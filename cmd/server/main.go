@@ -25,10 +25,10 @@ const (
 )
 
 const (
-	defaultDifficulty               = 2
-	defaultChallengeLength          = 16
-	defaultSolutionLength           = 8
-	defaultConnHandleTimeoutSeconds = 15
+	defaultDifficulty         = 2
+	defaultChallengeLength    = 16
+	defaultSolutionLength     = 8
+	defaultConnTimeoutSeconds = 3
 )
 
 func main() {
@@ -36,7 +36,7 @@ func main() {
 	difficulty := env.MustReadIntEnv("WOW_SERVER_DIFFICULTY", defaultDifficulty, exitCodeWrongParam)
 	challengeLength := env.MustReadIntEnv("WOW_SERVER_CHALLENGE_LENGTH", defaultChallengeLength, exitCodeWrongParam)
 	solutionLength := env.MustReadIntEnv("WOW_SERVER_SOLUTION_LENGTH", defaultSolutionLength, exitCodeWrongParam)
-	connHandleTimeoutSeconds := env.MustReadIntEnv("WOW_SERVER_CONN_HANDLE_TIMEOUT_SECONDS", defaultConnHandleTimeoutSeconds, exitCodeWrongParam)
+	connTimeoutSeconds := env.MustReadIntEnv("WOW_SERVER_CONN_TIMEOUT_SECONDS", defaultConnTimeoutSeconds, exitCodeWrongParam)
 
 	log.Printf("starting the server with difficulty '%v', challenge length '%v' and solution length '%v'",
 		difficulty, challengeLength, solutionLength)
@@ -73,10 +73,10 @@ func main() {
 	// Handle incoming connections.
 
 	h := handler{
-		difficulty:               difficulty,
-		challengeLength:          challengeLength,
-		solutionLength:           solutionLength,
-		connHandleTimeoutSeconds: connHandleTimeoutSeconds,
+		difficulty:      difficulty,
+		challengeLength: challengeLength,
+		solutionLength:  solutionLength,
+		connTimeout:     time.Duration(connTimeoutSeconds) * time.Second,
 	}
 
 	go func() {
@@ -102,38 +102,41 @@ func main() {
 }
 
 type handler struct {
-	difficulty               int
-	challengeLength          int
-	solutionLength           int
-	connHandleTimeoutSeconds int
+	difficulty      int
+	challengeLength int
+	solutionLength  int
+	connTimeout     time.Duration
 }
 
 // handleConnection handles given client connection.
 // In case of any error it logs error message and closes the connection.
 func (h handler) handleConnection(ctx context.Context, connNum int, conn net.Conn) {
-	connHandleTimeout := time.Duration(h.connHandleTimeoutSeconds) * time.Second
-
-	defer conn.Close()
-
-	ctx, cancel := context.WithTimeout(ctx, connHandleTimeout)
+	ctx, cancel := context.WithTimeout(ctx, h.connTimeout)
 	defer cancel()
+
+	// Close connection in case of timeout.
+
+	go func() {
+		<-ctx.Done()
+		conn.Close()
+	}()
+
+	// Generate challenge for client.
 
 	challenge, err := pow.GenerateRandomString(h.challengeLength)
 	if err != nil {
 		logf(connNum, "failed to generate callenge: %v", err)
 		return
 	}
-
-	logf(connNum, "generated challenge '%v', difficulty is '%v'", challenge, h.difficulty)
+	logf(connNum, "generated challenge '%v'", challenge)
 
 	// Send challenge with difficulty to client.
 
-	message := protocol.FormatChallengeForClient(challenge, h.difficulty)
+	message := protocol.FormatChallengeForClient(challenge, h.difficulty, h.solutionLength)
 	if _, err = fmt.Fprintln(conn, message); err != nil {
 		logf(connNum, "failed to send challenge: %v", err)
 		return
 	}
-
 	logf(connNum, "challenge sent, waiting for solution")
 
 	// Read solution from client.
@@ -149,6 +152,8 @@ func (h handler) handleConnection(ctx context.Context, connNum int, conn net.Con
 	}
 	solution := string(solutionBytes[:h.solutionLength])
 	logf(connNum, "received solution '%v'", solution)
+
+	// Verify the solution.
 
 	if pow.VerifySolution(challenge, h.difficulty, solution) {
 		// Send random quote to the client if solution is correct.
