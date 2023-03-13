@@ -39,6 +39,11 @@ func SolveChallenge(ctx context.Context, challenge []byte, difficulty, length in
 // If they are, the function returns `true`, indicating that the solution is valid.
 func VerifySolution(challenge, solution []byte, difficulty int) bool {
 
+	if len(solution) == 0 {
+		// Don't allow empty solution.
+		return false
+	}
+
 	hash := sha256.Sum256(append(challenge, solution...))
 
 	for i := 0; i < difficulty; i++ {

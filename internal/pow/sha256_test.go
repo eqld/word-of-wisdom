@@ -2,6 +2,7 @@ package pow
 
 import (
 	"context"
+	"encoding/hex"
 	"testing"
 	"time"
 
@@ -46,6 +47,17 @@ func TestSolveAndVerify(t *testing.T) {
 	wrongDifficulty := 3
 	correct = VerifySolution(challenge, solution, wrongDifficulty)
 	assert.False(t, correct)
+}
+
+func TestVerifySolution_Empty(t *testing.T) {
+	challengeWithEmptySolution, err := hex.DecodeString("f3a8b76fd9afdebe9871d2962893c8bde78266a055b3960846ac78d3304a")
+	require.NoError(t, err)
+
+	valid := VerifySolution(challengeWithEmptySolution, []byte{}, 2)
+	assert.False(t, valid)
+
+	valid = VerifySolution(challengeWithEmptySolution, nil, 2)
+	assert.False(t, valid)
 }
 
 func TestSolveChallenge_Timeout(t *testing.T) {
