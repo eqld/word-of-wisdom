@@ -10,15 +10,15 @@ import (
 // GenerateRandomBytes generates a random sequence of bytes of given length for the PoW challenge or solution.
 func GenerateRandomBytes(length int) ([]byte, error) {
 	if length <= 0 {
-		return nil, fmt.Errorf("string length must be positive")
+		return nil, fmt.Errorf("sequence length must be positive")
 	}
 
-	message := make([]byte, length)
-	if _, err := rand.Read(message); err != nil {
-		return nil, fmt.Errorf("failed to generate random message: %w", err)
+	sequence := make([]byte, length)
+	if _, err := rand.Read(sequence); err != nil {
+		return nil, fmt.Errorf("failed to generate random sequence: %w", err)
 	}
 
-	return message, nil
+	return sequence, nil
 }
 
 // SolveChallenge attempts to solve given challenge with given difficulty using a solution of given length.
@@ -34,7 +34,7 @@ func SolveChallenge(ctx context.Context, challenge []byte, difficulty, length in
 }
 
 // VerifySolution takes a PoW challenge, a difficulty level, and a solution as inputs.
-// It appends the solution to the challenge, computes the SHA256 hash of the resulting string,
+// It appends the solution to the challenge, computes the SHA256 hash of the resulting sequence,
 // and checks whether the first `difficulty` bytes of the hash are zero.
 // If they are, the function returns `true`, indicating that the solution is valid.
 func VerifySolution(challenge, solution []byte, difficulty int) bool {

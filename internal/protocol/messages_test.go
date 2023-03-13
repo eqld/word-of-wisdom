@@ -60,6 +60,7 @@ func TestChallengeDecode_Error(t *testing.T) {
 	f("746573742d6368616c6c656e6765:foo:bar")
 	f("746573742d6368616c6c656e6765:foo:8")
 	f("746573742d6368616c6c656e6765:4:bar")
+	f("wrong-format:4:8")
 }
 
 func TestSolutionEncodeDecode(t *testing.T) {
