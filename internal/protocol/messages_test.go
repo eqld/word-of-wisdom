@@ -94,8 +94,17 @@ func TestQuoteEncodeDecode(t *testing.T) {
 	assert.Equal(t, quote, quoteActual)
 }
 
+func TestQuoteDecode_NewLine(t *testing.T) {
+	quote, err := QuoteDecode("Rm9vIGlzIEJhci4KICAgICAgICAtLSBhbm9ueW1vdXM=\n")
+	require.NoError(t, err)
+	assert.Equal(t, "Foo is Bar.\n        -- anonymous", quote)
+}
+
 func TestQuoteDecode_Error(t *testing.T) {
 	_, err := QuoteDecode("")
+	require.Error(t, err)
+
+	_, err = QuoteDecode("\n")
 	require.Error(t, err)
 
 	_, err = QuoteDecode("wrong-message")

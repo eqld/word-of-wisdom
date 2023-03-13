@@ -61,6 +61,8 @@ func QuoteEncode(quote string) (message string) {
 
 // QuoteDecode decodes a quote from base64 message
 func QuoteDecode(message string) (quote string, err error) {
+	message = strings.TrimRight(message, "\n")
+
 	if message == "" {
 		return "", fmt.Errorf("empty quote in server message")
 	}

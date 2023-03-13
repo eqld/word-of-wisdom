@@ -61,7 +61,7 @@ func main() {
 
 	challenge, difficulty, solutionLength, err := protocol.ChallengeDecode(challengeMsg)
 	if err != nil {
-		log.Println("failed to decode challenge with difficulty:", err)
+		log.Println("failed to decode challenge:", err)
 		os.Exit(exitCodeWrongMessageFormat)
 	}
 
@@ -86,7 +86,7 @@ func main() {
 
 	quote, err := protocol.QuoteDecode(quoteMsg)
 	if err != nil {
-		log.Println("failed to decode quote with difficulty:", err)
+		log.Println("failed to decode quote:", err)
 		os.Exit(exitCodeWrongMessageFormat)
 	}
 
