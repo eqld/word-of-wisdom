@@ -23,7 +23,7 @@ func ChallengeDecode(message string) (challenge []byte, difficulty, solutionLeng
 
 	challengeStr := messageParsed[0]
 	if challengeStr == "" {
-		return nil, 0, 0, fmt.Errorf("empty challenge in server message: %w", err)
+		return nil, 0, 0, fmt.Errorf("empty challenge in server message")
 	}
 
 	if challenge, err = hex.DecodeString(challengeStr); err != nil {
@@ -48,6 +48,9 @@ func SolutionEncode(solution []byte) (message string) {
 
 // SolutionDecode decodes message with solution.
 func SolutionDecode(message string) (solution []byte, err error) {
+	if message == "" {
+		return nil, fmt.Errorf("empty solution in client message")
+	}
 	return hex.DecodeString(message)
 }
 
@@ -58,9 +61,14 @@ func QuoteEncode(quote string) (message string) {
 
 // QuoteDecode decodes a quote from base64 message
 func QuoteDecode(message string) (quote string, err error) {
+	if message == "" {
+		return "", fmt.Errorf("empty quote in server message")
+	}
+
 	quoteBytes, err := base64.StdEncoding.DecodeString(message)
 	if err != nil {
 		return "", fmt.Errorf("wrong quote message format: %w", err)
 	}
+
 	return string(quoteBytes), nil
 }

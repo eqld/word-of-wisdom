@@ -61,3 +61,43 @@ func TestChallengeDecode_Error(t *testing.T) {
 	f("746573742d6368616c6c656e6765:foo:8")
 	f("746573742d6368616c6c656e6765:4:bar")
 }
+
+func TestSolutionEncodeDecode(t *testing.T) {
+	solution := []byte("test-solution")
+	message := "746573742d736f6c7574696f6e"
+
+	messageActual := SolutionEncode(solution)
+	assert.Equal(t, message, messageActual)
+
+	solutionActual, err := SolutionDecode(messageActual)
+	require.NoError(t, err)
+	assert.Equal(t, solution, solutionActual)
+}
+
+func TestSolutionDecode_Error(t *testing.T) {
+	_, err := SolutionDecode("")
+	require.Error(t, err)
+
+	_, err = SolutionDecode("wrong-message")
+	require.Error(t, err)
+}
+
+func TestQuoteEncodeDecode(t *testing.T) {
+	quote := "Foo is Bar.\n        -- anonymous"
+	message := "Rm9vIGlzIEJhci4KICAgICAgICAtLSBhbm9ueW1vdXM="
+
+	messageActual := QuoteEncode(quote)
+	assert.Equal(t, message, messageActual)
+
+	quoteActual, err := QuoteDecode(messageActual)
+	require.NoError(t, err)
+	assert.Equal(t, quote, quoteActual)
+}
+
+func TestQuoteDecode_Error(t *testing.T) {
+	_, err := QuoteDecode("")
+	require.Error(t, err)
+
+	_, err = QuoteDecode("wrong-message")
+	require.Error(t, err)
+}
