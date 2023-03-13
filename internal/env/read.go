@@ -6,6 +6,8 @@ import (
 	"strconv"
 )
 
+var exitFunc = os.Exit
+
 // MustReadIntEnv reads integer value from given environment variable
 // or terminates the program with special exit code if the value is not a valid integer.
 func MustReadIntEnv(envName string, defaultValue int, exitCode int) int {
@@ -17,7 +19,7 @@ func MustReadIntEnv(envName string, defaultValue int, exitCode int) int {
 	v, err := strconv.Atoi(str)
 	if err != nil {
 		log.Printf("wrong value of '%v' environment variable: %v\n", envName, err)
-		os.Exit(exitCode)
+		exitFunc(exitCode)
 	}
 
 	return v

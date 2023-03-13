@@ -132,8 +132,8 @@ func (h handler) handleConnection(ctx context.Context, connNum int, conn net.Con
 
 	// Send challenge with difficulty to client.
 
-	message := protocol.ChallengeEncode(challenge, h.difficulty, h.solutionLength)
-	if _, err = fmt.Fprintln(conn, message); err != nil {
+	challengeMsg := protocol.ChallengeEncode(challenge, h.difficulty, h.solutionLength)
+	if _, err = fmt.Fprintln(conn, challengeMsg); err != nil {
 		logf(connNum, "failed to send challenge: %v", err)
 		return
 	}
