@@ -53,15 +53,15 @@ func main() {
 		conn.Close()
 	}()
 
-	message, err := bufio.NewReader(conn).ReadString('\n')
+	challengeMsg, err := bufio.NewReader(conn).ReadString('\n')
 	if err != nil {
 		log.Println("failed to receive challenge from server:", err)
 		os.Exit(exitCodeFailedToReadFromConn)
 	}
 
-	challenge, difficulty, solutionLength, err := protocol.ParseChallengeForClient(message)
+	challenge, difficulty, solutionLength, err := protocol.ChallengeDecode(challengeMsg)
 	if err != nil {
-		log.Println("failed to parse challenge with difficulty:", err)
+		log.Println("failed to decode challenge with difficulty:", err)
 		os.Exit(exitCodeWrongMessageFormat)
 	}
 
@@ -71,18 +71,27 @@ func main() {
 		os.Exit(exitCodeFailedToSolveChallenge)
 	}
 
-	if _, err = fmt.Fprintln(conn, solution); err != nil {
+	solutionMsg := protocol.SolutionEncode(solution)
+
+	if _, err = fmt.Fprintln(conn, solutionMsg); err != nil {
 		log.Println("failed to send a solution to server:", err)
 		os.Exit(exitCodeFailedToWriteToConn)
 	}
 
-	quote, err := bufio.NewReader(conn).ReadString('\n')
+	quoteMsg, err := bufio.NewReader(conn).ReadString('\n')
 	if err != nil {
 		log.Println("failed to receive quote from server:", err)
 		os.Exit(exitCodeFailedToReadFromConn)
 	}
 
+	quote, err := protocol.QuoteDecode(quoteMsg)
+	if err != nil {
+		log.Println("failed to decode quote with difficulty:", err)
+		os.Exit(exitCodeWrongMessageFormat)
+	}
+
 	fmt.Println()
-	fmt.Println("WOW QUOTE >>>", quote)
+	fmt.Println("=== WOW QUOTE ===")
+	fmt.Println(quote)
 	fmt.Println()
 }

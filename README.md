@@ -16,9 +16,9 @@ The program works as follows:
 
 * It first checks if the user has provided correct value(s) of environment variable(s). If not, it logs an error message and exits.
 * Then it listens for incoming connections on port `8080` using `net.Listen`.
-* For each incoming connection, the program generates a PoW challenge consisting of a random message, a difficulty level and an expected solution length. The challenge is sent to the client as a string in the format `<message>:<difficulty>:<solution_length>\n`.
-* The client must solve the PoW challenge by appending given number of bytes to the message and computing the SHA256 hash of the resulting string. If the first `difficulty` bytes of the hash are all zero, the client's solution is considered valid.
-* If the client's solution is valid, the program generates a random quote using the `fortune` command and sends it to the client as a string.
+* For each incoming connection, the program generates a PoW challenge consisting of a random message, a difficulty level and an expected solution length. The challenge is sent to the client as a string in the format `<challenge_hex>:<difficulty>:<solution_length>\n`.
+* The client must solve the PoW challenge by appending given number of bytes to the challenge and computing the SHA256 hash of the result. If the first `difficulty` bytes of the hash are all zero, the client's solution is considered valid.
+* If the client's solution is valid, the program generates a random quote using the `fortune` command and sends it to the client as a base64-encoded string to preserve arbitrary newlines in the original quote.
 
 ### Usage
 
@@ -44,8 +44,8 @@ The program works as follows:
 
 * It first checks if the user has provided correct value(s) of environment variable(s) and the host and port number of the server as command-line arguments. If not, it logs an error message and exits.
 * Then it establishes a TCP connection with the server and receives a challenge with difficulty level and expected solution length from the server.
-* It parses the challenge with the difficulty level and starts solving the challenge using the Proof of Work algorithm. It generates random strings until it finds a string whose SHA256 hash has a prefix of `difficulty` number of zeros.
-* Once it finds the solution, it sends it to the server and receives a quote from the server, which is printed to the STDOUT with `WOW QUOTE >>>` prefix.
+* It decodes the challenge with the difficulty level and starts solving the challenge using the Proof of Work algorithm. It generates random bytes until it finds a sequence whose SHA256 hash has a prefix of `difficulty` number of zeros.
+* Once it finds the solution, it sends it to the server and receives a quote from the server, which is decoded from base64 and printed to the STDOUT with `=== WOW QUOTE ===` header.
 
 ### Usage
 

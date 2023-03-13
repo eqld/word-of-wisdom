@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -10,7 +11,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -123,16 +123,16 @@ func (h handler) handleConnection(ctx context.Context, connNum int, conn net.Con
 
 	// Generate challenge for client.
 
-	challenge, err := pow.GenerateRandomString(h.challengeLength)
+	challenge, err := pow.GenerateRandomBytes(h.challengeLength)
 	if err != nil {
 		logf(connNum, "failed to generate callenge: %v", err)
 		return
 	}
-	logf(connNum, "generated challenge '%v'", challenge)
+	logf(connNum, "generated challenge (HEX) '%v'", hex.EncodeToString(challenge))
 
 	// Send challenge with difficulty to client.
 
-	message := protocol.FormatChallengeForClient(challenge, h.difficulty, h.solutionLength)
+	message := protocol.ChallengeEncode(challenge, h.difficulty, h.solutionLength)
 	if _, err = fmt.Fprintln(conn, message); err != nil {
 		logf(connNum, "failed to send challenge: %v", err)
 		return
@@ -141,24 +141,31 @@ func (h handler) handleConnection(ctx context.Context, connNum int, conn net.Con
 
 	// Read solution from client.
 
-	solutionBytes := make([]byte, h.solutionLength+1)
-	if _, err := conn.Read(solutionBytes); err != nil {
+	solutionMsgBytes := make([]byte, h.solutionLength*2+1)
+	if _, err := conn.Read(solutionMsgBytes); err != nil {
 		logf(connNum, "failed to read solution: %v", err)
 		return
 	}
-	if solutionBytes[h.solutionLength] != '\n' {
+	if solutionMsgBytes[h.solutionLength*2] != '\n' {
 		logf(connNum, "solution length exceeds limit '%v'", h.solutionLength)
 		return
 	}
-	solution := string(solutionBytes[:h.solutionLength])
-	logf(connNum, "received solution '%v'", solution)
+	solutionMsg := string(solutionMsgBytes[:h.solutionLength*2])
+
+	solution, err := protocol.SolutionDecode(solutionMsg)
+	if err != nil {
+		logf(connNum, "wrong solution format: %v", err)
+		return
+	}
+	logf(connNum, "received solution (HEX) '%v'", solutionMsg)
 
 	// Verify the solution.
 
-	if pow.VerifySolution(challenge, h.difficulty, solution) {
+	if pow.VerifySolution(challenge, solution, h.difficulty) {
 		// Send random quote to the client if solution is correct.
 
 		logf(connNum, "solution is correct, generating a quote")
+
 		quote, err := getQuote(ctx)
 		if err != nil {
 			logf(connNum, "failed to generate response: %v", err)
@@ -167,10 +174,13 @@ func (h handler) handleConnection(ctx context.Context, connNum int, conn net.Con
 
 		logf(connNum, "sending the quote to the client: %v", quote)
 
-		if _, err = fmt.Fprintln(conn, quote); err != nil {
+		quoteMsg := protocol.QuoteEncode(quote)
+
+		if _, err = fmt.Fprintln(conn, quoteMsg); err != nil {
 			logf(connNum, "failed to send response: %v", err)
 			return
 		}
+
 		logf(connNum, "quote sent")
 	} else {
 		logf(connNum, "solution is not correct")
@@ -194,5 +204,5 @@ func getQuote(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("failed to get random quote from `fortune`: %w", err)
 	}
 
-	return strings.TrimSpace(strings.ReplaceAll(out.String(), "\n", " ")), nil
+	return out.String(), nil
 }
