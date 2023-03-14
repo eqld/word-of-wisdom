@@ -14,9 +14,9 @@ func TestGenerateRandomBytes(t *testing.T) {
 	for i := range make([]struct{}, 256) {
 		length := i + 1
 
-		str, err := GenerateRandomBytes(length)
+		v, err := GenerateRandomBytes(length)
 		require.NoError(t, err)
-		assert.Len(t, str, length)
+		assert.Len(t, v, length)
 	}
 }
 
@@ -44,7 +44,7 @@ func TestSolveAndVerify(t *testing.T) {
 	correct = VerifySolution(challenge, []byte("wrong-solution"), difficulty)
 	assert.False(t, correct)
 
-	wrongDifficulty := 3
+	wrongDifficulty := 999
 	correct = VerifySolution(challenge, solution, wrongDifficulty)
 	assert.False(t, correct)
 }
